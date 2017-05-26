@@ -1,10 +1,10 @@
 #!/usr.bin/python
 # -*- coding: utf-8 -*-
-from datetime import datetime
+from datetime import datetime, date
 from datetime import timedelta
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker,relationship
+from sqlalchemy.orm import sessionmaker,relationship,backref
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, ForeignKey, Date
 from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
@@ -67,7 +67,7 @@ class Gamer(Base):
         if self.birthdate:
             result = 18
         else:
-            result = 0
+            result = 77
         return result
 
 class GameSession(Base):
@@ -111,6 +111,100 @@ class GameSession(Base):
         else:
             return (0,0,0,0)
 
+class GameTable(Base):
+    """A table groups gamers around a game"""
+    __tablename__ = 'gametable'
+
+    id = Column(Integer, primary_key=True)
+    created = Column(DateTime, default=datetime.now)
+    modified = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    create_id = Column(Integer, ForeignKey('gamer.id'))
+    modify_id = Column(Integer, ForeignKey('gamer.id'))
+    active = Column(Boolean, default=True)
+    name = Column(String(255))
+    description = Column(Text)
+    begin = Column(DateTime)
+    end = Column(DateTime)
+    min_part = Column(Integer)
+    max_part = Column(Integer)
+    type = Column(String(50)) # proposition, confirmé
+    game_id = Column(Integer,ForeignKey('game.id'))
+    session_id = Column(Integer,ForeignKey('gamesession.id'))
+
+    creator = relationship('Gamer', foreign_keys=[create_id])
+    modifier = relationship('Gamer', foreign_keys=[modify_id])
+
+    def __repr__(self):
+        return (self.name and self.name or u'Table [%i]' % self.id)
+
+class Game(Base):
+    """A game is a proposed game : can be a game or a scenario"""
+    __tablename__ = 'game'
+
+    id = Column(Integer, primary_key=True)
+    created = Column(DateTime, default=datetime.now)
+    modified = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    create_id = Column(Integer, ForeignKey('gamer.id'))
+    modify_id = Column(Integer, ForeignKey('gamer.id'))
+    active = Column(Boolean, default=True)
+    name = Column(String(255))
+    parts = Column(String(200)) # can be a range "2-5" or a list of possibilities : "2; 4"
+    parent_id = Column(Integer,ForeignKey('game.id'))
+    average_duration = Column(Integer) # in minutes
+    
+    creator = relationship('Gamer', foreign_keys=[create_id])
+    modifier = relationship('Gamer', foreign_keys=[modify_id])
+    #parent = relationship('Game', remote_side=[id])
+    children = relationship('Game', backref=backref('parent', remote_side=[id]))
+
+    def __repr__(self):
+        return (self.name and self.name or u'Game [%i]' % self.id)
+
+    @property
+    def parts_as_list(self):
+        if ';' in self.parts:
+            ranges = self.parts.split(';')
+        else:
+            ranges = [self.parts,]
+        result = []
+        for srange in ranges:
+            if srange.count('-') == 1:
+                (sbegin,send) = srange.split('-')
+                begin = int(sbegin)
+                end = int(send)
+                if begin > end:
+                    (begin,end) = (end,begin)
+                value = begin
+                while value <= end:
+                    if value not in result:
+                        result.append(value)
+                    value += 1
+            elif srange.count('-') > 1:
+                pass
+            else:
+                value = int(srange.strip())
+                if value not in result:
+                    result.append(value)
+        return result
+
+class Attendance(Base):
+    """An attendance is a participation or a possible participation of a gamer to a table"""
+    __tablename__ = 'attendance'
+
+    id = Column(Integer, primary_key=True)
+    created = Column(DateTime, default=datetime.now)
+    modified = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    create_id = Column(Integer, ForeignKey('gamer.id'))
+    modify_id = Column(Integer, ForeignKey('gamer.id'))
+    active = Column(Boolean, default=True)
+    name = Column(String(50)) ## possible, confirmé, initiateur
+    table_id = Column(Integer,ForeignKey('gametable.id'))
+    gamer_id = Column(Integer,ForeignKey('gamer.id'))
+    
+    creator = relationship('Gamer', foreign_keys=[create_id])
+    modifier = relationship('Gamer', foreign_keys=[modify_id])
+    gamer = relationship('Gamer', foreign_keys=[gamer_id,])
+
 if __name__ == '__main__':
     engine = create_engine('sqlite:///gamesess_test1.db', echo=False)
 
@@ -135,7 +229,8 @@ if __name__ == '__main__':
         first_name = u'Philippe',
         surname = u'Philmer',
         login = u'philmer.vdm@gmail.com',
-        create_id = admin_id)
+        create_id = admin_id,
+        birthdate = date(1966,02,17))
     session.add(club_manager)
     session.commit()
     cmanager_id = club_manager.id
@@ -192,14 +287,110 @@ if __name__ == '__main__':
     prec_id = prec.id
 
     next = GameSession(
-        name = u"Soirée du 26/5/2017 à Mormont"
-        begin = datetime(2017,5,26,20,0,0)
-        end = datetime(2017,5,26,23,59,59)
+        name = u"Soirée du 26/5/2017 à Mormont",
+        begin = datetime(2017,5,26,20,0,0),
+        end = datetime(2017,5,26,23,59,59),
         create_id = admin.id)
     session.add(next)
     session.commit()
     next_id = next.id
 
+    sw = Game(
+        name = u'Small World',
+        parts = '2-4',
+        average_duration=150)
+    session.add(sw)
+    session.commit()
+    sw_id = sw.id
+    
+    swu = Game(
+        name = u'Small World Underground',
+        parts = '2-4',
+        parent_id = sw_id,
+        average_duration=180)
+    session.add(swu)
+    session.commit()
+    swu_id = swu.id
+    
+    adr = Game(
+        name = u"Les Aventuriers du Rail",
+        parts = '2-4',
+        average_duration = 150)
+    session.add(adr)
+    session.commit()
+    adr_id = adr.id
+    
+    adr_inde = Game(
+        name = u"Les Aventuriers du Rail - carte Inde",
+        parts = '2-4',
+        average_duration = 120,
+        parent_id = adr_id)
+    session.add(adr_inde)
+    session.commit()
+
+    adr_suisse = Game(
+        name = u"Les Aventuriers du Rail - carte Suisse",
+        parts = '2-4',
+        average_duration = 150,
+        parent_id = adr_id)
+    session.add(adr_suisse)
+    session.commit()
+    adr_suisse_id = adr_suisse.id
+
+    toi = Game(
+        name = u"Tide Of Iron - L'aube d'acier",
+        parts = '2;4',
+        average_duration = 300)
+    session.add(toi)
+    session.commit()
+    
+    table_adr_suisse = GameTable(
+        name = u"Première partie aux Aventuriers du Rail - carte Suisse",
+        min_part = 3,
+        max_part = 4,
+        begin = datetime(2017,5,26,20,0,0),
+        end = datetime(2017,5,26,22,0,0),
+        type = u'Proposition',
+        game_id = adr_suisse_id,
+        session_id = next_id)
+    session.add(table_adr_suisse)
+    session.commit()
+    table1_id = table_adr_suisse.id
+    
+    table_sw = GameTable(
+        name = u"Small World en test",
+        min_part = 3,
+        max_part = 4,
+        begin = datetime(2017,5,26,20,0,0),
+        end = datetime(2017,05,26,22,30,0),
+        type = u'Proposition',
+        game_id = sw_id,
+        session_id = next_id)
+    session.add(table_sw)
+    session.commit()
+    table2_id = table_sw.id
+    
+    att_adr_suisse = Attendance(
+        name = 'initiateur',
+        table_id = table1_id,
+        gamer_id = cmanager_id)
+    session.add(att_adr_suisse)
+    session.commit()
+    
+    att_sw = Attendance(
+        name = 'initiateur',
+        table_id = table2_id,
+        gamer_id = cmanager_id)
+    session.add(att_sw)
+    session.commit()
+    
+    att2_sw = Attendance(
+        name = 'possible',
+        table_id = table2_id,
+        gamer_id = gamer_b)
+    session.add(att2_sw)
+    session.commit()
+    
     club = session.query(Club).first()
     print club.id
     print club.name
@@ -209,3 +400,25 @@ if __name__ == '__main__':
         print gamer.id
         print gamer
         print '-------------'
+
+    games = session.query(Game).all()
+    for game in games:
+        print game.id
+        print game
+        print game.parts_as_list
+        print game.parent
+        print game.children
+        print '-------------'
+
+    tables = session.query(GameTable).all()
+    for table in tables:
+        print table.id
+        print table.name
+        print table.creator
+        
+    atts = session.query(Attendance).all()
+    for att in atts:
+        print att.id
+        print att.name
+        print att.gamer
+        print att.gamer.age
