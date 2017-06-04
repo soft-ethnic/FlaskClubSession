@@ -3,6 +3,7 @@
 from datetime import datetime, date
 from datetime import timedelta
 
+from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker,relationship,backref
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, ForeignKey, Date
@@ -31,7 +32,9 @@ class Club(Base):
         return (self.name and self.name or u'Club [%i]' % self.id)
 
 class Gamer(Base):
-    """ A Gamer and/or a user in a club"""
+    """ A Gamer and/or a user in a club.
+        Also serves as USERS database for Flask-Login
+    """
     __tablename__ = 'gamer'
 
     id = Column(Integer, primary_key=True)
@@ -46,7 +49,7 @@ class Gamer(Base):
     login = Column(String(50))
     last_login = Column(DateTime)
     birthdate = Column(Date)
-    #password
+    password_hashed = Column(String(128))
 
     creator = relationship('Gamer', foreign_keys=[create_id])
     modifier = relationship('Gamer', foreign_keys=[modify_id])
@@ -69,7 +72,29 @@ class Gamer(Base):
         else:
             result = 77
         return result
+        
+    @property
+    def password(self):
+        raise AttributeError(u'Password is not a readable attribute')
+    @password.setter
+    def password(self,password):
+        self.password_hashed = generate_password_hash(password)
+    def verify_password(self,password):
+        return check_password_hack(self.password_hashed,password)
 
+    # Flask-Login methods and properties
+    def get_id(self):
+        return unicode(self.id)
+    @property
+    def is_active(self):
+        return self.active
+    @property
+    def is_anonymous(self):
+        return False
+    @property
+    def is_authenticated(self):
+        return True
+        
 class GameSession(Base):
     """ A Game Session where gamers can play many games with others"""
     __tablename__ = 'gamesession'
@@ -218,28 +243,33 @@ if __name__ == '__main__':
         last_name=u'Administrator',
         first_name=u'',
         surname=u'Admin',
-        login=u'admin')
+        login=u'admin',
+        password=u'admin')
     session.add(admin)
     session.commit()
     admin_id = admin.id
     print admin_id
+    print admin.password_hashed
 
     club_manager = Gamer(
         last_name = u'VANDERMEER',
         first_name = u'Philippe',
         surname = u'Philmer',
         login = u'philmer.vdm@gmail.com',
+        password=u'philmer',
         create_id = admin_id,
         birthdate = date(1966,02,17))
     session.add(club_manager)
     session.commit()
     cmanager_id = club_manager.id
+    print club_manager.password_hashed
 
     gamer = Gamer(
         last_name = u'SELECK',
         first_name = u'Vincianne',
         surname = u'',
         login = u'vinci.seleck@gmail.com',
+        password=u'vincianne',
         create_id = cmanager_id)
     session.add(gamer)
     session.commit()
@@ -250,6 +280,7 @@ if __name__ == '__main__':
         first_name = u'Sylvain',
         surname = u'',
         login = u'sylvain.vdm@gmail.com',
+        password=u'sylvain',
         create_id = cmanager_id)
     session.add(gamer)
     session.commit()
@@ -260,6 +291,7 @@ if __name__ == '__main__':
         first_name = u'Simon',
         surname = u'',
         login = u'simon.deuxrys@gmail.com',
+        password=u'simon',
         create_id = cmanager_id)
     session.add(gamer)
     session.commit()
