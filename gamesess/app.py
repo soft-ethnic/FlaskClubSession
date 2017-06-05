@@ -1,7 +1,9 @@
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
+from flask import render_template, redirect, request, url_for, flash
 
 from gamesess.models import Base, Gamer
+from gamesess.forms import LoginForm
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///gamesess_test1.db'
@@ -24,7 +26,14 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     """ Flask-Login hook to load a User instance from ID """
     return db.session.query(Gamer).get(int(user_id))
-    
+
+# Flask-Bootstrap initialization
+from flask.ext.bootstrap import Bootstrap
+bootstrap = Bootstrap(app)
+
+from werkzeug.security import generate_password_hash, check_password_hash
+# End of extensions initializations
+
 @app.route('/')
 def main():
     return u'Hello, Flask Game Club Sessions !<br/><a href="/clubs">List of your clubs</a>'
@@ -69,23 +78,22 @@ def get_urban_image():
 def login():
     if current_user and current_user.is_authenticated:
         return redirect(url_for('clubs_list'))
-    form = LoginForm(request.form)
-    error = None
-    if request.form == 'POST' and form.validate():
-        email = form.username.data.lower().strip()
-        password = form.password.data.strip()
-        user, authenticated = User.authenticate(db.session.query, email, password)
-        if authenticated:
-            login_user(user)
-            return redirect(url_for('clubs_list'))
-        else:
-            error = 'Incorrect username or password'
-        return render_template('user/login.html', form=form, error=error)
+    form = LoginForm()
+    if form.validate_on_submit():
+        #user = Gamer.query.filter_by(email=form.email.data).first()
+        user = db.session.query(Gamer).filter_by(email=form.email.data).first()
+        if user is not None and user.verify_password(form.password.data):
+            login_user(user, form.remember_me.data)
+            return redirect(request.args.get('next') or '/')
+        flash('Invalid username or password.')
+    return render_template('login.html', form=form)
 
 @app.route('/logout')
 def logout():
     logout_user()
+    flash('You have been logged out.')
     return redirect('/')
+# EOF Flask-Login class
 
 if __name__ == '__main__':
     app.run('0.0.0.0',8002,debug=True)

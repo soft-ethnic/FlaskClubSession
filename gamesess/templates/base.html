@@ -1,0 +1,19 @@
+{% extends 'bootstrap/base.html' %}
+
+{% block title %}Club Session{% endblock %}
+
+{% block navbar %}
+<ul class="nav navbar-nav navbar-right">
+    {% if current_user.is_authenticated %}
+    <li><a href="/logout">LogOut</a></li>
+    {% else %}
+    <li><a href="/login">LogIn</a></li>
+    {% endif %}
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% block page_content %}{% endblock %}
+</div>
+{% endblock %}

@@ -2,4 +2,6 @@ Flask
 Flask-Script
 Flask-SQLAlchemy
 Flask-Login
+Flask-Bootstrap
 WTForms
+Flask-WTF

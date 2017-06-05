@@ -50,7 +50,8 @@ class Gamer(Base):
     last_login = Column(DateTime)
     birthdate = Column(Date)
     password_hashed = Column(String(128))
-
+    email = Column(String(255))
+    
     creator = relationship('Gamer', foreign_keys=[create_id])
     modifier = relationship('Gamer', foreign_keys=[modify_id])
 
@@ -80,7 +81,7 @@ class Gamer(Base):
     def password(self,password):
         self.password_hashed = generate_password_hash(password)
     def verify_password(self,password):
-        return check_password_hack(self.password_hashed,password)
+        return check_password_hash(self.password_hashed,password)
 
     # Flask-Login methods and properties
     def get_id(self):
@@ -244,7 +245,8 @@ if __name__ == '__main__':
         first_name=u'',
         surname=u'Admin',
         login=u'admin',
-        password=u'admin')
+        password=u'admin',
+        email='dev@soft-ethnic.be')
     session.add(admin)
     session.commit()
     admin_id = admin.id
@@ -258,7 +260,8 @@ if __name__ == '__main__':
         login = u'philmer.vdm@gmail.com',
         password=u'philmer',
         create_id = admin_id,
-        birthdate = date(1966,02,17))
+        birthdate = date(1966,02,17),
+        email='philmer.vdm@gmail.com')
     session.add(club_manager)
     session.commit()
     cmanager_id = club_manager.id
