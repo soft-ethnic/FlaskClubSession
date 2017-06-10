@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Club Session - Home Page{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>Bienvenue sur Séances de Club !</h1>
+</div>
+<div class="row">
+    <div class="col-md-1">
+        &nbsp;
+    </div>
+    <div class="col-md-10">
+        <p>Bonjour, {% if current_user.is_authenticated %}{{ current_user._get_name() }}{% else %}visiteur{% endif %} !</p>
+        <p>Ce p'tit site gratuit permet de gérer les séances de clubs de jeu de société, avec les présences et les propositions/réservations de tables de jeu.</p>
+        <p>Une fois enregistré dans le système, et associé à l'un ou l'autre club participant à cette expérience de vie, vous pourrez :</p>
+        <ul>
+            <li>Indiquer que vous compter venir à une séance</li>
+            <li>Vous inscrire à un ou plusieurs tables de jeu proposées</li>
+            <li>Proposer vos prpres tables de jeu</li>
+        </ul>
+        <p>Si vous êtes un club et que vous désirez utiliser cet outil pour gérer vos séances de jeu, n'hésitez à créer votre propre espace. C'est gratuit et cela le restera !</p>
+    </div>
+    <div class="col-md-1">
+        &nbsp;
+    </div>
+</div>
+{% endblock %}

@@ -23,6 +23,7 @@ class Club(Base):
     name = Column(String(255))
     description = Column(Text)
     address = Column(Text)
+    public = Column(Boolean, default=False)
     # gps_coord
 
     creator = relationship('Gamer', foreign_keys=[create_id])
@@ -56,6 +57,9 @@ class Gamer(Base):
     modifier = relationship('Gamer', foreign_keys=[modify_id])
 
     def __repr__(self):
+        return self._get_name()
+
+    def _get_name(self):
         if self.surname:
             result = self.surname
         elif self.last_name:
@@ -65,7 +69,7 @@ class Gamer(Base):
         else:
             result = u'Gamer [%i]' % self.id
         return result
-    
+        
     @property
     def age(self):
         if self.birthdate:
@@ -96,6 +100,24 @@ class Gamer(Base):
     def is_authenticated(self):
         return True
         
+class GamerClub(Base):
+    """ A Club can have many manager and more users"""
+    __tablename__ = 'gamerclub'
+
+    id = Column(Integer, primary_key=True)
+    created = Column(DateTime, default=datetime.now)
+    modified = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    create_id = Column(Integer, ForeignKey('gamer.id'))
+    modify_id = Column(Integer, ForeignKey('gamer.id'))
+    active = Column(Boolean,default=True)
+    role = Column(String(50)) ## manager/user
+    club_id = Column(Integer, ForeignKey('club.id'))
+    gamer_id = Column(Integer, ForeignKey('gamer.id'))
+
+    creator = relationship('Gamer', foreign_keys=[create_id])
+    modifier = relationship('Gamer', foreign_keys=[modify_id])
+    gamer = relationship('Gamer', foreign_keys=[gamer_id])
+
 class GameSession(Base):
     """ A Game Session where gamers can play many games with others"""
     __tablename__ = 'gamesession'
@@ -300,17 +322,70 @@ if __name__ == '__main__':
     session.commit()
     gamer_c = gamer.id
 
+    gamer = Gamer(
+        last_name = u'ANONYMOUS',
+        first_name = u'Thomas',
+        surname = u'',
+        login = u'thomas.anonymous@gmail.com',
+        password=u'thomas',
+        create_id = cmanager_id)
+    session.add(gamer)
+    session.commit()
+    gamer_thomas_id = gamer.id
+
     mormont = Club(
         name = u'Bibliothèque de Mormont',
         description = u'''Séances de jeu tous les derniers vendredis du mois.\n
                           De 20h00 à 24h00. Enfants bienvenus.
                        ''',
         address = u'Mormont',
+        public = True,
         create_id = admin.id)
     session.add(mormont)
     session.commit()
     mormont_id = mormont.id
 
+    thomas = Club(
+        name = u'Thomas and Co',
+        description = u'''Séances assez disparates mais souvent consacrées à d enouveaux jeux. Joueurs expérimentés et avides de nouveautés.
+                       ''',
+        address = u'Liège',
+        public = True,
+        create_id = admin.id)
+    session.add(thomas)
+    session.commit()
+    thomas_club_id = thomas.id
+
+    thomas_thomas = GamerClub(
+        role = 'manager',
+        gamer_id = gamer_thomas_id,
+        club_id = thomas_club_id,
+        create_id = admin.id)
+    session.add(thomas_thomas)
+    session.commit()
+
+    philmer_mormont = GamerClub(
+        role = 'manager',
+        gamer_id = cmanager_id,
+        club_id = mormont_id,
+        create_id = admin.id)
+    session.add(philmer_mormont)
+    session.commit()
+    sylvain_mormont = GamerClub(
+        role = 'user',
+        gamer_id = gamer_b,
+        club_id = mormont_id,
+        create_id = admin.id)
+    session.add(sylvain_mormont)
+    session.commit()
+    simon_mormont = GamerClub(
+        role = 'user',
+        gamer_id = gamer_c,
+        club_id = mormont_id,
+        create_id = admin.id)
+    session.add(simon_mormont)
+    session.commit()
+    
     prec = GameSession(
        name = u"Soirée du 21/4/2017 à Mormont",
        begin = datetime(2017,4,21,20,0,0),

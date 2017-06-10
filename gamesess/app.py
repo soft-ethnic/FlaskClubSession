@@ -2,7 +2,7 @@ from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask import render_template, redirect, request, url_for, flash
 
-from gamesess.models import Base, Gamer
+from gamesess.models import Base, Gamer, Club, Game, GameSession
 from gamesess.forms import LoginForm
 
 app = Flask(__name__)
@@ -36,7 +36,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 @app.route('/')
 def main():
-    return u'Hello, Flask Game Club Sessions !<br/><a href="/clubs">List of your clubs</a>'
+    return render_template('home.html')
 
 @app.route('/about')
 def about():
@@ -45,9 +45,16 @@ def about():
 @app.route('/clubs')
 @login_required
 def clubs_list():
-    return 'List of clubs'
+    clubs = db.session.query(Club).filter_by(public=True).order_by(Club.name).all()
+    return render_template('club_list.html',clubs = clubs)
+
+@app.route('/myclubs')
+@login_required
+def user_clubs_list():
+    return 'List of clubs for the current user'
 
 @app.route('/club/<int:club_id>/')
+@login_required
 def club_details(club_id):
     return 'Details on club %i' % club_id
 
@@ -62,6 +69,7 @@ def table_details(table_id):
     return 'Details on table %i' % table_id
 
 @app.route('/gamer/<int:gamer_id>/')
+@login_required
 def gamer_details(gamer_id):
     return 'Details on gamer %i' % gamer_id
 
@@ -89,6 +97,7 @@ def login():
     return render_template('login.html', form=form)
 
 @app.route('/logout')
+@login_required
 def logout():
     logout_user()
     flash('You have been logged out.')

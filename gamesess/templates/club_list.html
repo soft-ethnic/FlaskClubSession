@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Séances de Jeu - Clubs{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>Clubs de Jeux !</h1>
+    <p>Cette liste donne tous les clubs auxquels vous participez et tous les clubs Publics.</p>
+</div>
+{% for club in clubs %}
+<div class="row">
+    <div class="col-md-1">
+        &nbsp;
+    </div>
+    <div class="col-md-10">
+        <h2><a href="/club/{{ club.id }}">{{ club.name }}</a></h2>
+        <p>{{ club.description }}</p>
+        <p>{{ club.address }}</p>
+        <p>{% if club.public == True %}Club accessible à tous {% endif %}</p>
+        <p>Gestionnaire de ce club :</p>
+        
+    </div>
+    <div class="col-md-1">
+        &nbsp;
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
