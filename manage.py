@@ -1,4 +1,4 @@
-from flask.ext.script import Manager
+from flask_script import Manager
 from gamesess.app import app
 
 manager = Manager(app)

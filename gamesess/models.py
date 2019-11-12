@@ -8,6 +8,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker,relationship,backref
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, ForeignKey, Date
 from sqlalchemy.ext.declarative import declarative_base
+# import six
+
 Base = declarative_base()
 
 class Club(Base):
@@ -89,7 +91,7 @@ class Gamer(Base):
 
     # Flask-Login methods and properties
     def get_id(self):
-        return unicode(self.id)
+        return str(self.id)
     @property
     def is_active(self):
         return self.active
@@ -144,7 +146,7 @@ class GameSession(Base):
             delta = self.end - self.begin
             return delta.days * 24 * 60 * 60 + delta.seconds
         else:
-	    return 0
+	        return 0
 
     @property
     def duration(self):
@@ -272,8 +274,8 @@ if __name__ == '__main__':
     session.add(admin)
     session.commit()
     admin_id = admin.id
-    print admin_id
-    print admin.password_hashed
+    print(admin_id)
+    print(admin.password_hashed)
 
     club_manager = Gamer(
         last_name = u'VANDERMEER',
@@ -282,12 +284,12 @@ if __name__ == '__main__':
         login = u'philmer.vdm@gmail.com',
         password=u'philmer',
         create_id = admin_id,
-        birthdate = date(1966,02,17),
+        birthdate = date(1966,2,17),
         email='philmer.vdm@gmail.com')
     session.add(club_manager)
     session.commit()
     cmanager_id = club_manager.id
-    print club_manager.password_hashed
+    print(club_manager.password_hashed)
 
     gamer = Gamer(
         last_name = u'SELECK',
@@ -472,7 +474,7 @@ if __name__ == '__main__':
         min_part = 3,
         max_part = 4,
         begin = datetime(2017,5,26,20,0,0),
-        end = datetime(2017,05,26,22,30,0),
+        end = datetime(2017,5,26,22,30,0),
         type = u'Proposition',
         game_id = sw_id,
         session_id = next_id)
@@ -502,33 +504,33 @@ if __name__ == '__main__':
     session.commit()
     
     club = session.query(Club).first()
-    print club.id
-    print club.name
+    print(club.id)
+    print(club.name)
 
     gamers = session.query(Gamer).all()
     for gamer in gamers:
-        print gamer.id
-        print gamer
-        print '-------------'
+        print(gamer.id)
+        print(gamer)
+        print('-------------')
 
     games = session.query(Game).all()
     for game in games:
-        print game.id
-        print game
-        print game.parts_as_list
-        print game.parent
-        print game.children
-        print '-------------'
+        print(game.id)
+        print(game)
+        print(game.parts_as_list)
+        print(game.parent)
+        print(game.children)
+        print('-------------')
 
     tables = session.query(GameTable).all()
     for table in tables:
-        print table.id
-        print table.name
-        print table.creator
+        print(table.id)
+        print(table.name)
+        print(table.creator)
         
     atts = session.query(Attendance).all()
     for att in atts:
-        print att.id
-        print att.name
-        print att.gamer
-        print att.gamer.age
+        print(att.id)
+        print(att.name)
+        print(att.gamer)
+        print(att.gamer.age)
