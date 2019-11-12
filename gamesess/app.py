@@ -1,5 +1,5 @@
 from flask import Flask
-from flask.ext.sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 from flask import render_template, redirect, request, url_for, flash
 
 from gamesess.models import Base, Gamer, Club, Game, GameSession
@@ -14,8 +14,8 @@ db = SQLAlchemy(app)
 db.Model = Base
 
 from flask import session
-from flask.ext.login import LoginManager, current_user
-from flask.ext.login import login_user, logout_user, login_required
+from flask_login import LoginManager, current_user
+from flask_login import login_user, logout_user, login_required
 
 # Flask-Login initialization
 login_manager = LoginManager()
@@ -28,7 +28,7 @@ def load_user(user_id):
     return db.session.query(Gamer).get(int(user_id))
 
 # Flask-Bootstrap initialization
-from flask.ext.bootstrap import Bootstrap
+from flask_bootstrap import Bootstrap
 bootstrap = Bootstrap(app)
 
 from werkzeug.security import generate_password_hash, check_password_hash
